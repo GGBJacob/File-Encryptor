@@ -1,0 +1,1 @@
+Nie usuwajcie ikony z folderu z exe, bo przestanie działać, a jak zmienicie i będziecie chcieli wygenerować exe (używając "pyinstaller --onefile --noconsole main.py"), dodajcie zmienioną ikonę do folderu z exe / przenieście exe do folderu z ikonami. <3
