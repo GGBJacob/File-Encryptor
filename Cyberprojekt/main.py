@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
-
+import encryption as enc
 
 def get_file(entry, input_file, filetypes):
     filepath = fd.askopenfilename(title='Wybierz plik', filetypes=filetypes)
@@ -51,38 +51,6 @@ def check_file_name(output_name, input_file):
     elif tmp[len(tmp) - 1] != "txt":
         mb.showerror("Error", "Invalid file extension!\nAccepted extensions: *.txt")
         return
-
-
-# TODO szyfrowanie pliku
-def encrypt_file(input_file, key_value, key_file, output_file):
-    if (input_file.get() == "Null" or key_value.get() == "Null"
-            or key_file.get() == "Null" or output_file.get() == "Null"):
-        mb.showerror("Error", "Missing arguments!")
-    # input file zawiera pełną ścieżkę pliku który szyfrujemy
-    # key_value to zmienna, która zawiera wartość klucza
-    # key_file ma ścieżkę pliku tekstowego do którego zapiszesz klucz
-    # output_file - ścieżka pliku zaszyfrowanego
-
-    # ! UŻYWAJ METOD .get() DO POBRANIA TYCH WARTOŚCI !
-    # chyba i tak trzeba sprawdzać czy rozszerzenie pliku z kluczem jest .txt (zostawiam funkcję wyżej do inspiracji)
-
-
-# TODO implementacja generowania klucza (key_value samo się wyświetli w okienku)
-def generate_key(key_value):
-    key_value.set("XYZ")
-    pass
-    # key_value.set(*wartość klucza jako string*)
-
-
-# TODO implementacja deszyfrowania plików
-def decrypt_file(input_file, key_file, output_file):
-    if (input_file.get() == "Null" or key_file.get() == "Null" or output_file.get() == "Null"):
-        mb.showerror("Error", "Missing arguments!")
-
-    # Zasada ta sama co przy szyfrowaniu
-    # .get() i te sprawy
-    pass
-
 
 def create_encryption_UI(frame, input_file, key_value, key_file, output_file):
     # Napis 1
@@ -148,11 +116,11 @@ def create_encryption_UI(frame, input_file, key_value, key_file, output_file):
 
     # Przycisk szyfrowania
     confirm = tk.Button(frame, text="Encrypt!",
-                        command=lambda: encrypt_file(input_file, key_value, key_file, output_file))
+                        command=lambda: enc.encrypt_file(input_file, key_value, key_file, output_file))
     confirm.grid(row=4, column=0, padx=10, pady=10)
 
     # Generacja nowego klucza
-    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: generate_key(key_value))
+    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: enc.generate_key(key_value))
     reroll_button.grid(row=4, column=1, padx=10, pady=10)
 
     # Przycisk clear
@@ -205,7 +173,7 @@ def create_decryption_UI(frame, input_file, key_file, output_file):
     button3.grid(row=2, column=2, padx=5, pady=10)
 
     # Przycisk decrypt
-    button_decrypt = tk.Button(frame, text="Decrypt!", command=lambda: decrypt_file(input_file, key_file, output_file))
+    button_decrypt = tk.Button(frame, text="Decrypt!", command=lambda: enc.decrypt_file(input_file, key_file, output_file))
     button_decrypt.grid(row=3, column=0, padx=5, pady=10)
 
     # Przycisk clear
