@@ -25,7 +25,6 @@ def generate_key(key_value):
 
     for _ in range(KEY_LENGTH):
         new_key += characters[secrets.randbelow(len(characters))]
-    print(new_key)
     key_value.set(new_key)
     pass
     # key_value.set(*wartość klucza jako string*)
