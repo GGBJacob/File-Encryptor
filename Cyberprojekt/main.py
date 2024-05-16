@@ -3,6 +3,8 @@ from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 import encryption as enc
 
+KEY_LENGTH = 16
+
 def get_file(entry, input_file, filetypes):
     filepath = fd.askopenfilename(title='Wybierz plik', filetypes=filetypes)
     entry.config(state='normal')
@@ -114,13 +116,13 @@ def create_encryption_UI(frame, input_file, key_value, key_file, output_file):
     # rbutton2.grid(row=2, column=1, padx=0, pady=10)
     # rbutton3.grid(row=2, column=2, padx=5, pady=10)
 
-    # Przycisk szyfrowania
+    # Przycisk szyfrowania #TODO JAKUB tutaj mode niech przyjmuje to co radio button wskaże :) ladnie prosze o zabezpieczenie ze cos musi byc zawsze klikniete
     confirm = tk.Button(frame, text="Encrypt!",
-                        command=lambda: enc.encrypt_file(input_file, key_value, key_file, output_file))
+                        command=lambda: enc.encrypt_sym(input_file, output_file, key_file, key_value, "block"))
     confirm.grid(row=4, column=0, padx=10, pady=10)
 
     # Generacja nowego klucza
-    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: enc.generate_key(key_value))
+    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: enc.generate_key(key_value, KEY_LENGTH))
     reroll_button.grid(row=4, column=1, padx=10, pady=10)
 
     # Przycisk clear
