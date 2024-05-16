@@ -193,7 +193,7 @@ def main():
     root.resizable(False, False)
 
     input_file = tk.StringVar(value="Null")
-    key_value = tk.StringVar(value="ABCD")
+    key_value = tk.StringVar(value="ABCDEFGHIJKLMNOP")
     key_file = tk.StringVar(value="Null")
     output_file = tk.StringVar(value="Null")
 
