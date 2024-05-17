@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 import encryption as enc
+from encryption import KEY_LENGTH
 
-KEY_LENGTH = 16
 
 def get_file(entry, input_file, filetypes):
     filepath = fd.askopenfilename(title='Wybierz plik', filetypes=filetypes)
@@ -77,6 +77,10 @@ def create_encryption_UI(frame, input_file, key_value, key_file, output_file):
     entry_key_value = tk.Entry(frame, textvariable=key_value)
     entry_key_value.grid(row=1, column=1, padx=5, pady=10)
 
+    # Generacja nowego klucza
+    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: enc.generate_key(key_value, KEY_LENGTH))
+    reroll_button.grid(row=1, column=2, padx=10, pady=10)
+
     # Napis 3
     label_key_file = tk.Label(frame, text="Encryption key file:")
     label_key_file.grid(row=2, column=0, padx=5, pady=10)
@@ -106,29 +110,28 @@ def create_encryption_UI(frame, input_file, key_value, key_file, output_file):
                                      command=lambda: get_file(entry_output, output_file, [("All files", ".*")]))
     button_select_output.grid(row=3, column=2, pady=5, padx=10)
 
-    # # Wybór szyfrowania
-    # encryption = tk.IntVar(value=1)
-    # rbutton1 = tk.Radiobutton(frame, text="Szyfrowanie 1", value=1, variable=encryption, activebackground="red")
-    # rbutton2 = tk.Radiobutton(frame, text="Szyfrowanie 2", value=2, variable=encryption)
-    # rbutton3 = tk.Radiobutton(frame, text="Szyfrowanie 3", value=3, variable=encryption)
-    #
-    # rbutton1.grid(row=2, column=0, padx=5, pady=10)
-    # rbutton2.grid(row=2, column=1, padx=0, pady=10)
-    # rbutton3.grid(row=2, column=2, padx=5, pady=10)
+    # Label do wyboru
+    label_encrypt_mode = tk.Label(frame, text="Encrypt mode:")
+    label_encrypt_mode.grid(row=4, column=0, padx=5, pady=10)
 
-    # Przycisk szyfrowania #TODO JAKUB tutaj mode niech przyjmuje to co radio button wskaże :) ladnie prosze o zabezpieczenie ze cos musi byc zawsze klikniete
+    # Wybór szyfrowania
+    encrypt_mode = tk.StringVar(value="block") #Tryb szyfrowania
+    rbutton1 = tk.Radiobutton(frame, text="Block", value="block", variable=encrypt_mode)
+    rbutton2 = tk.Radiobutton(frame, text="Stream", value="stream", variable=encrypt_mode)
+
+    rbutton1.grid(row=4, column=1, padx=5, pady=10)
+    rbutton2.grid(row=4, column=2, padx=5, pady=10)
+
+    # Przycisk szyfrowania #DONE JAKUB tutaj mode niech przyjmuje to co radio button wskaże :) ladnie prosze o zabezpieczenie ze cos musi byc zawsze klikniete
     confirm = tk.Button(frame, text="Encrypt!",
-                        command=lambda: enc.encrypt_sym(input_file, output_file, key_file, key_value, "block"))
-    confirm.grid(row=4, column=0, padx=10, pady=10)
+                        command=lambda: enc.encrypt_sym(input_file, output_file, key_file, key_value, encrypt_mode))
+    confirm.grid(row=5, column=0, padx=10, pady=10)
 
-    # Generacja nowego klucza
-    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: enc.generate_key(key_value, KEY_LENGTH))
-    reroll_button.grid(row=4, column=1, padx=10, pady=10)
 
     # Przycisk clear
     button_clear = tk.Button(frame, text="Clear",
                              command=lambda: reset_form([input_file, key_file, key_value, output_file]))
-    button_clear.grid(row=4, column=2, pady=10, padx=10)
+    button_clear.grid(row=5, column=2, pady=10, padx=10)
 
 
 def create_decryption_UI(frame, input_file, key_file, output_file):
@@ -193,7 +196,7 @@ def main():
     root.resizable(False, False)
 
     input_file = tk.StringVar(value="Null")
-    key_value = tk.StringVar(value="ABCDEFGHIJKLMNOP")
+    key_value = tk.StringVar(value="Null")
     key_file = tk.StringVar(value="Null")
     output_file = tk.StringVar(value="Null")
 
