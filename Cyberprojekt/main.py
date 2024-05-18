@@ -98,6 +98,39 @@ def get_directory(entry, input_dir):
     create_encryption_directory(temp, "ABCD", "WOMP WOMP", directory)
 
 
+
+def encrypt(input_file, output_file, key_file, key_value, encrypt_mode):
+
+    with open(input_file.get(), "rb") as f:
+        data = f.read()
+
+    # TODO: fix mode parameter
+    encrypted, iv = enc.encrypt_sym(data, key_value, mode="block")
+
+    with open(output_file.get(), "wb") as f:
+        f.write(encrypted)
+
+    newline = bytes("\n", 'utf-8')
+    combined = iv + newline + bytes(key_value.get(), 'utf-8')
+
+    with open(key_file.get(), "wb") as f:
+        f.write(combined)
+
+
+def decrypt(input_file, key_file, output_file):
+
+    with open(input_file.get(), "rb") as f:
+        ciphertext = f.read()
+    with open(key_file.get(), "rb") as f:
+        iv = f.readline().strip()
+        key = f.read()
+
+    plaintext = enc.decrypt_sym(ciphertext, key, iv, mode="block")
+
+    with open(output_file.get(), "wb") as f:
+        f.write(plaintext)
+
+
 def create_encryption_UI(frame, input_file, key_value, key_file, output_file):
     # Napis 1
     label_selected = tk.Label(frame, text="Selected file:")
@@ -168,7 +201,7 @@ def create_encryption_UI(frame, input_file, key_value, key_file, output_file):
 
     # Przycisk szyfrowania #DONE JAKUB tutaj mode niech przyjmuje to co radio button wskaże :) ladnie prosze o zabezpieczenie ze cos musi byc zawsze klikniete
     confirm = tk.Button(frame, text="Encrypt!",
-                        command=lambda: enc.encrypt_sym(input_file, output_file, key_file, key_value, encrypt_mode))
+                        command=lambda: encrypt(input_file, output_file, key_file, key_value, encrypt_mode))
     confirm.grid(row=5, column=0, padx=10, pady=10)
 
     # Przycisk clear
@@ -242,7 +275,7 @@ def create_decryption_UI(frame, input_file, key_file, output_file):
 
     # Przycisk decrypt
     button_decrypt = tk.Button(frame, text="Decrypt!",
-                               command=lambda: enc.decrypt_file(input_file, key_file, output_file))
+                               command=lambda: decrypt(input_file, key_file, output_file))
     button_decrypt.grid(row=3, column=0, padx=5, pady=10)
 
     # Przycisk clear
