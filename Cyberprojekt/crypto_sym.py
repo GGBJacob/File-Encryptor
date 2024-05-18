@@ -1,5 +1,7 @@
 import string
 import secrets
+import tkinter
+
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from tkinter import messagebox as mb
@@ -7,30 +9,6 @@ import os
 from cryptography.hazmat.primitives import padding
 
 KEY_LENGTH = 16
-
-
-# TODO szyfrowanie pliku
-def encrypt_file(input_file, key_value, key_file, output_file):
-    if (input_file.get() == "Null" or key_value.get() == "Null"
-            or key_file.get() == "Null" or output_file.get() == "Null"):
-        mb.showerror("Error", "Missing arguments!")
-    # input file zawiera pełną ścieżkę pliku który szyfrujemy
-    # key_value to zmienna, która zawiera wartość klucza
-    # key_file ma ścieżkę pliku tekstowego do którego zapiszesz klucz
-    # output_file - ścieżka pliku zaszyfrowanego
-
-    # ! UŻYWAJ METOD .get() DO POBRANIA TYCH WARTOŚCI !
-    # chyba i tak trzeba sprawdzać czy rozszerzenie pliku z kluczem jest .txt (zostawiam funkcję wyżej do inspiracji)
-
-# TODO implementacja deszyfrowania plików
-def decrypt_file(input_file, key_file, output_file):
-    if (input_file.get() == "Null" or key_file.get() == "Null" or output_file.get() == "Null"):
-        mb.showerror("Error", "Missing arguments!")
-
-    # Zasada ta sama co przy szyfrowaniu
-    # .get() i te sprawy
-    pass
-
 
 #implementacja generowania klucza (key_value samo się wyświetli w okienku)
 def generate_key(key_value, key_length):
@@ -99,13 +77,8 @@ def decrypt_sym(ciphertext, key, iv, mode):
 
 if __name__ == "__main__":
     print(".")
-    # NOT WORKING - REDONE
-    # input_file1 = "input.txt"
-    # output_file1 = "encrypted.bin"
-    # input_file2 = "encrypted.bin"
-    # output_file2 = "decrypted.txt"
-    # key = b"thisisaverylongs"
-    #
-    # iv = encrypt_sym(input_file1, output_file1, key, mode="block")
-    # decrypt_sym(input_file2, output_file2, key, iv, mode="block")
+    # message = "This is a secret message!"
+    # key = "Q64kr4FxivuF6yHM"
+    # encrypted_text, iv = encrypt_sym(message, key, mode="block") #coś tu nie działa z key
+    # decrypted_text = decrypt_sym(encrypted_text, key, iv, mode="block")
 

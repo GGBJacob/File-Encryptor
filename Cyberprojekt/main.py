@@ -2,8 +2,8 @@ import os
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
-import encryption as enc
-from encryption import KEY_LENGTH
+import crypto_sym as enc
+from crypto_sym import KEY_LENGTH
 
 
 def get_file(entry, input_file, filetypes):
