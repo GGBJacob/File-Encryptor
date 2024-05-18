@@ -76,7 +76,7 @@ def encrypt(input_file, folder_path, key_value, encrypt_mode):
     #szyfrowanie asymetryczne
     private_key = ca.generate_key_pair()
     encrypted_asym_key_sym = ca.encrypt_asym(key_sym.decode(), private_key.public_key())
-    combined_file_sym_and_asym_key_sym = encrypted_asym_key_sym + newline + encrypted_file_sym
+    combined_file_sym_and_asym_key_sym = encrypted_asym_key_sym + encrypted_file_sym
 
     with open(output_file, "wb") as f:
         f.write(combined_file_sym_and_asym_key_sym)
@@ -97,7 +97,7 @@ def createFilePaths(input_file, folder_path):
 def decrypt(input_file, key_file, output_file):
 
     with open(input_file.get(), "rb") as f:
-        encrypted_asym_key_sym = f.readline().strip()
+        encrypted_asym_key_sym = f.read(256)
         encrypted_file_sym = f.read()
 
     private_key = ca.load_private_key(key_file.get())
