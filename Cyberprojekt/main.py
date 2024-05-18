@@ -2,9 +2,10 @@ import os
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
-import crypto_sym as enc
+import crypto_sym as cs
+import crypto_asym as ca
 from crypto_sym import KEY_LENGTH
-
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat
 
 def get_file(entry, input_file, filetypes):
     filepath = fd.askopenfilename(title='Select file', filetypes=filetypes)
@@ -58,47 +59,51 @@ def get_directory(entry, input_dir):
         input_dir.set(directory)
     entry.config(state='readonly')
 
-
 def encrypt(input_file, folder_path, key_value, encrypt_mode):
 
     if not are_variables_set([input_file, folder_path, key_value, encrypt_mode]):
         return
-
-    # if not os.path.exists(folder_path):
-    #     os.makedirs(folder_path)
-
-    input_file_name = input_file.split('/')[-1].split('.')[0]
-
-    file_paths = ['encrypted_' + input_file_name + '.txt', 'keypair.key']
-
-    for i in range(len(file_paths)):
-        file_paths[i] = os.path.join(folder_path, file_paths[i])
-
-    output_file, key_file = file_paths
-
+    output_file, key_file = createFilePaths(input_file, folder_path)
     with open(input_file, "rb") as f:
         data = f.read()
 
-    encrypted, iv = enc.encrypt_sym(data, key_value, encrypt_mode)
+    newline = bytes("\n", 'utf-8')
+
+    #szyfrowanie symetrtyczne
+    encrypted_file_sym, iv = cs.encrypt_sym(data, key_value, encrypt_mode)
+    key_sym = iv + newline + bytes(key_value.get(), 'utf-8')
+
+    #szyfrowanie asymetryczne
+    private_key = ca.generate_key_pair()
+    encrypted_asym_key_sym = ca.encrypt_asym(key_sym.decode(), private_key.public_key())
+    combined_file_sym_and_asym_key_sym = encrypted_asym_key_sym + newline + encrypted_file_sym
 
     with open(output_file, "wb") as f:
-        f.write(encrypted)
+        f.write(combined_file_sym_and_asym_key_sym)
 
-    newline = bytes("\n", 'utf-8')
-    combined = iv + newline + bytes(key_value.get(), 'utf-8')
+    ca.save_private_key(private_key, os.path.join(folder_path, "key"))
+    ca.save_public_key(private_key.public_key(), os.path.join(folder_path, "key.pub"))
 
-    with open(key_file, "wb") as f:
-        f.write(combined)
+def createFilePaths(input_file, folder_path):
+    # if not os.path.exists(folder_path):
+    #     os.makedirs(folder_path)
+    input_file_name = input_file.split('/')[-1].split('.')[0]
+    file_paths = ['encrypted_' + input_file_name + '.txt', 'keypair.key']
+    for i in range(len(file_paths)):
+        file_paths[i] = os.path.join(folder_path, file_paths[i])
+    return file_paths
 
 
 def decrypt(input_file, key_file, output_file):
-    with open(input_file.get(), "rb") as f:
-        ciphertext = f.read()
-    with open(key_file.get(), "rb") as f:
-        iv = f.readline().strip()
-        key = f.read()
 
-    plaintext = enc.decrypt_sym(ciphertext, key, iv, mode="block")
+    with open(input_file.get(), "rb") as f:
+        encrypted_asym_key_sym = f.readline().strip()
+        encrypted_file_sym = f.read()
+
+    private_key = ca.load_private_key(key_file.get())
+
+    iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
+    plaintext = cs.decrypt_sym(encrypted_file_sym, key_sym.encode(), iv.encode(), mode="block")
 
     with open(output_file.get(), "wb") as f:
         f.write(plaintext)
@@ -128,7 +133,7 @@ def create_encryption_UI(frame, input_file, key_value, folder_path):
     entry_key_value.grid(row=1, column=1, padx=5, pady=10)
 
     # Generacja nowego klucza
-    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: enc.generate_key(key_value, KEY_LENGTH))
+    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: cs.generate_key(key_value, KEY_LENGTH))
     reroll_button.grid(row=1, column=2, padx=10, pady=10)
 
     # Label do wyboru ścieżki folderu wyjściowego
@@ -195,7 +200,7 @@ def create_decryption_UI(frame, input_file, key_file, output_file):
 
     # Przycisk do klucza
     button2 = tk.Button(frame, text="Select file",
-                        command=lambda: get_file(entry_key, key_file, [("Text files", "*.txt")]))
+                        command=lambda: get_file(entry_key, key_file, [("All files", ".*")]))
     button2.grid(row=1, column=2, padx=5, pady=10)
 
     # Napis output

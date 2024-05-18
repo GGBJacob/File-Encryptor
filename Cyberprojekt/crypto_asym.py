@@ -1,5 +1,5 @@
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
 
@@ -35,6 +35,41 @@ def decrypt_asym(ciphertext, key_priv):
     )
     return decrypted.decode('utf-8')  # Decode bytes back to string
 
+def save_private_key(private_key, filename):
+    pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+    with open(filename, 'wb') as pem_out:
+        pem_out.write(pem)
+
+def save_public_key(public_key, filename):
+    pem = public_key.public_bytes(
+      encoding=serialization.Encoding.PEM,
+      format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    with open(filename, 'wb') as pem_out:
+        pem_out.write(pem)
+
+def load_private_key(filename, password=None):
+    with open(filename, 'rb') as pem_in:
+        pem_data = pem_in.read()
+    private_key = serialization.load_pem_private_key(
+      pem_data,
+      password=password,
+      backend=default_backend()
+    )
+    return private_key
+
+def load_public_key(filename):
+    with open(filename, 'rb') as pem_in:
+        pem_data = pem_in.read()
+    public_key = serialization.load_pem_public_key(
+      pem_data,
+      backend=default_backend()
+    )
+    return public_key
 
 if __name__ == "__main__":
     private_key = generate_key_pair()
