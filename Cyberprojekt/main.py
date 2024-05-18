@@ -187,7 +187,7 @@ def create_decryption_UI(frame, input_file, key_file):
 
     # Przycisk do wyboru pliku
     button1 = tk.Button(frame, text="Select file",
-                        command=lambda: get_file(entry_input, input_file, [("All files", ".*")]))
+                        command=lambda: get_file(entry_input, input_file, [("Text files", "*.txt")]))
     button1.grid(row=0, column=2, pady=10, padx=10)
 
     # Napis klucz
@@ -201,7 +201,7 @@ def create_decryption_UI(frame, input_file, key_file):
 
     # Przycisk do klucza
     button2 = tk.Button(frame, text="Select file",
-                        command=lambda: get_file(entry_key, key_file, [("All files", ".*")]))
+                        command=lambda: get_file(entry_key, key_file, [("Key files", ".*")]))
     button2.grid(row=1, column=2, padx=5, pady=10)
 
     # Przycisk decrypt
