@@ -92,7 +92,7 @@ def encrypt(input_file, key_value, encrypt_mode):
     with open(output_file, "wb") as f:
         f.write(combined_file_sym_and_asym_key_sym)
 
-    ca.save_private_key(private_key, os.path.join(folder_path, "key"))
+    ca.save_private_key(private_key, os.path.join(folder_path, "key.priv"))
     ca.save_public_key(private_key.public_key(), os.path.join(folder_path, "key.pub"))
 
 
@@ -201,7 +201,7 @@ def create_decryption_UI(frame, input_file, key_file):
 
     # Przycisk do klucza
     button2 = tk.Button(frame, text="Select file",
-                        command=lambda: get_file(entry_key, key_file, [("Key files", ".*")]))
+                        command=lambda: get_file(entry_key, key_file, [("Key files", ".priv")]))
     button2.grid(row=1, column=2, padx=5, pady=10)
 
     # Przycisk decrypt
