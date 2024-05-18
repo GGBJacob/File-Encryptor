@@ -82,7 +82,7 @@ def encrypt(input_file, key_value, encrypt_mode):
 
     # szyfrowanie symetrtyczne
     encrypted_file_sym, iv = cs.encrypt_sym(data, key_value, encrypt_mode)
-    key_sym = iv + newline + bytes(key_value.get(), 'utf-8')
+    key_sym = bytes(encrypt_mode, 'utf-8') + newline + iv + newline + bytes(key_value.get(), 'utf-8')
 
     # szyfrowanie asymetryczne
     private_key = ca.generate_key_pair()
@@ -116,8 +116,8 @@ def decrypt(input_file, key_file):
 
     private_key = ca.load_private_key(key_file.get())
 
-    iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
-    plaintext = cs.decrypt_sym(encrypted_file_sym, key_sym.encode(), iv.encode(), mode="block")
+    encrypt_mode, iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
+    plaintext = cs.decrypt_sym(encrypted_file_sym, key_sym.encode(), iv.encode(), mode=encrypt_mode)
 
     output_file = create_decryption_output_file(input_file)
 
