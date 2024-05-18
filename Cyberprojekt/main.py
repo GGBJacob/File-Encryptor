@@ -5,7 +5,7 @@ from tkinter import messagebox as mb
 import crypto_sym as cs
 import crypto_asym as ca
 from crypto_sym import KEY_LENGTH
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat
+
 
 def get_file(entry, input_file, filetypes):
     filepath = fd.askopenfilename(title='Select file', filetypes=filetypes)
@@ -44,7 +44,8 @@ def save_file(entry, file, filetypes):
 
 def are_variables_set(variables):
     for variable in variables:
-        if (isinstance(variable, str) and variable == "Null") or (isinstance(variable,tk.StringVar) and variable.get() == "Null"):
+        if (isinstance(variable, str) and variable == "Null") or (
+                isinstance(variable, tk.StringVar) and variable.get() == "Null"):
             mb.showerror("Come on...", "Not all arguments set!")
             return False
     return True
@@ -59,21 +60,31 @@ def get_directory(entry, input_dir):
         input_dir.set(directory)
     entry.config(state='readonly')
 
-def encrypt(input_file, folder_path, key_value, encrypt_mode):
 
-    if not are_variables_set([input_file, folder_path, key_value, encrypt_mode]):
+def create_encryption_output_path(input_file):
+    path = os.path.dirname(input_file) + '/Cryptography Output'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+def encrypt(input_file, key_value, encrypt_mode):
+    if not are_variables_set([input_file, key_value, encrypt_mode]):
         return
+
+    folder_path = create_encryption_output_path(input_file)
+
     output_file, key_file = createFilePaths(input_file, folder_path)
     with open(input_file, "rb") as f:
         data = f.read()
 
     newline = bytes("\n", 'utf-8')
 
-    #szyfrowanie symetrtyczne
+    # szyfrowanie symetrtyczne
     encrypted_file_sym, iv = cs.encrypt_sym(data, key_value, encrypt_mode)
     key_sym = iv + newline + bytes(key_value.get(), 'utf-8')
 
-    #szyfrowanie asymetryczne
+    # szyfrowanie asymetryczne
     private_key = ca.generate_key_pair()
     encrypted_asym_key_sym = ca.encrypt_asym(key_sym.decode(), private_key.public_key())
     combined_file_sym_and_asym_key_sym = encrypted_asym_key_sym + newline + encrypted_file_sym
@@ -84,18 +95,21 @@ def encrypt(input_file, folder_path, key_value, encrypt_mode):
     ca.save_private_key(private_key, os.path.join(folder_path, "key"))
     ca.save_public_key(private_key.public_key(), os.path.join(folder_path, "key.pub"))
 
+
 def createFilePaths(input_file, folder_path):
-    # if not os.path.exists(folder_path):
-    #     os.makedirs(folder_path)
-    input_file_name = input_file.split('/')[-1].split('.')[0]
+    input_file_name = input_file.split('/')[-1].split('.')[0] # wyjmuje nazwę pliku
     file_paths = ['encrypted_' + input_file_name + '.txt', 'keypair.key']
     for i in range(len(file_paths)):
-        file_paths[i] = os.path.join(folder_path, file_paths[i])
+        file_paths[i] = os.path.join(folder_path, file_paths[i]) # tworzenie ścieżek do wygenerowania
     return file_paths
 
 
-def decrypt(input_file, key_file, output_file):
+def create_decryption_output_file(input_file):
+    return os.path.dirname(input_file.get()) + '/decrypted_' + input_file.get().split('/')[-1].split('_')[1]
+    # wyjmuje ścieżkę z pliku, dodaje przedrostek decrypted i resztę nazwy z rozszerzeniem txt
 
+
+def decrypt(input_file, key_file):
     with open(input_file.get(), "rb") as f:
         encrypted_asym_key_sym = f.readline().strip()
         encrypted_file_sym = f.read()
@@ -105,11 +119,13 @@ def decrypt(input_file, key_file, output_file):
     iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
     plaintext = cs.decrypt_sym(encrypted_file_sym, key_sym.encode(), iv.encode(), mode="block")
 
-    with open(output_file.get(), "wb") as f:
+    output_file = create_decryption_output_file(input_file)
+
+    with open(output_file, "wb") as f:
         f.write(plaintext)
 
 
-def create_encryption_UI(frame, input_file, key_value, folder_path):
+def create_encryption_UI(frame, input_file, key_value):
     # Napis input
     label_selected = tk.Label(frame, text="Input file:")
     label_selected.grid(row=0, column=0, padx=5, pady=10)
@@ -136,21 +152,6 @@ def create_encryption_UI(frame, input_file, key_value, folder_path):
     reroll_button = tk.Button(frame, text="Reroll key", command=lambda: cs.generate_key(key_value, KEY_LENGTH))
     reroll_button.grid(row=1, column=2, padx=10, pady=10)
 
-    # Label do wyboru ścieżki folderu wyjściowego
-
-    path_label = tk.Label(frame, text="Result path")
-    path_label.grid(row=2, column=0, padx=5, pady=10)
-
-    # Wyświetlanie ścieżki
-
-    path_entry = tk.Entry(frame, textvariable=folder_path)
-    path_entry.config(state='readonly')
-    path_entry.grid(row=2, column=1, padx=5, pady=10)
-
-    # Przycisk wyboru ścieżki
-    path_select_button = tk.Button(frame, text="Select path", command=lambda: get_directory(path_entry, folder_path))
-    path_select_button.grid(row=2, column=2, padx=5, pady=10)
-
     # Label do wyboru
     label_encrypt_mode = tk.Label(frame, text="Encrypt mode:")
     label_encrypt_mode.grid(row=4, column=0, padx=5, pady=10)
@@ -164,17 +165,17 @@ def create_encryption_UI(frame, input_file, key_value, folder_path):
     rbutton2.grid(row=4, column=2, padx=5, pady=10)
 
     # Przycisk szyfrowania
-    confirm = tk.Button(frame, text="Encrypt!",
-                        command=lambda: encrypt(input_file.get(), folder_path.get(), key_value, encrypt_mode.get()))
+    confirm = tk.Button(frame, text="Encrypt!", bg="#23FF00",
+                        command=lambda: encrypt(input_file.get(), key_value, encrypt_mode.get()))
     confirm.grid(row=5, column=0, padx=10, pady=10)
 
     # Przycisk clear
-    button_clear = tk.Button(frame, text="Clear",
-                             command=lambda: reset_form([input_file, key_value, folder_path]))
+    button_clear = tk.Button(frame, text="Clear", bg="#FFF300",
+                             command=lambda: reset_form([input_file, key_value]))
     button_clear.grid(row=5, column=2, pady=10, padx=10)
 
 
-def create_decryption_UI(frame, input_file, key_file, output_file):
+def create_decryption_UI(frame, input_file, key_file):
     # Napis wybrany plik
     label_selected = tk.Label(frame, text="Selected file:")
     label_selected.grid(row=0, column=0, padx=5, pady=10)
@@ -203,27 +204,13 @@ def create_decryption_UI(frame, input_file, key_file, output_file):
                         command=lambda: get_file(entry_key, key_file, [("All files", ".*")]))
     button2.grid(row=1, column=2, padx=5, pady=10)
 
-    # Napis output
-    label_output = tk.Label(frame, text="Output file:")
-    label_output.grid(row=2, column=0, padx=5, pady=10)
-
-    # Pole do wyświetlania ścieżki outputu
-    entry_output = tk.Entry(frame, textvariable=output_file)
-    entry_output.config(state="readonly")
-    entry_output.grid(row=2, column=1, padx=5, pady=10)
-
-    # Przycisk do wczytania outputu
-    button3 = tk.Button(frame, text="Select file",
-                        command=lambda: get_file(entry_output, output_file, [("Text files", "*.txt")]))
-    button3.grid(row=2, column=2, padx=5, pady=10)
-
     # Przycisk decrypt
-    button_decrypt = tk.Button(frame, text="Decrypt!",
-                               command=lambda: decrypt(input_file, key_file, output_file))
+    button_decrypt = tk.Button(frame, text="Decrypt!", bg="#FF7C00",
+                               command=lambda: decrypt(input_file, key_file))
     button_decrypt.grid(row=3, column=0, padx=5, pady=10)
 
     # Przycisk clear
-    button_clear = tk.Button(frame, text="Clear", command=lambda: reset_form([input_file, key_file, output_file]))
+    button_clear = tk.Button(frame, text="Clear", bg="#FFF300", command=lambda: reset_form([input_file, key_file]))
     button_clear.grid(row=3, column=2, padx=5, pady=10)
 
 
@@ -235,8 +222,8 @@ def main():
     # root.eval('tk::PlaceWindow . center') # <- środkuje okno na ekranie
     root.resizable(False, False)
 
-    input_file = tk.StringVar(value="Null")
-    folder_path = tk.StringVar(value="Null")
+    encryption_input_file = tk.StringVar(value="Null")
+    decryption_input_file = tk.StringVar(value="Null")
     key_value = tk.StringVar(value="Null")
     key_file = tk.StringVar(value="Null")
     output_file = tk.StringVar(value="Null")
@@ -257,8 +244,8 @@ def main():
     encrypt_frame = tk.Frame(root)
     decrypt_frame = tk.Frame()
 
-    create_decryption_UI(decrypt_frame, input_file, key_file, output_file)
-    create_encryption_UI(encrypt_frame, input_file, key_value, folder_path)
+    create_decryption_UI(decrypt_frame, decryption_input_file, key_file)
+    create_encryption_UI(encrypt_frame, encryption_input_file, key_value)
 
     if appMode.get() == 1:
         change_frame(decrypt_frame, encrypt_frame, appMode.get(), root)
