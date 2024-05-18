@@ -6,14 +6,15 @@ import crypto_sym as cs
 import crypto_asym as ca
 from crypto_sym import KEY_LENGTH
 
-
-def get_file(entry, input_file, filetypes):
+def get_file(entry, input_file, file_name, filetypes):
     filepath = fd.askopenfilename(title='Select file', filetypes=filetypes)
     entry.config(state='normal')
     if not filepath:
         input_file.set("Null")
+        file_name.set("Null")
     else:
         input_file.set(filepath)
+        file_name.set(input_file.get().split('/')[-1])
     entry.config(state='readonly')
 
 
@@ -51,16 +52,6 @@ def are_variables_set(variables):
     return True
 
 
-def get_directory(entry, input_dir):
-    directory = fd.askdirectory(title='Select file')
-    entry.config(state='normal')
-    if not directory:
-        input_dir.set("Null")
-    else:
-        input_dir.set(directory)
-    entry.config(state='readonly')
-
-
 def create_encryption_output_path(input_file):
     path = os.path.dirname(input_file) + '/Cryptography Output'
     if not os.path.exists(path):
@@ -95,6 +86,8 @@ def encrypt(input_file, key_value, encrypt_mode):
     ca.save_private_key(private_key, os.path.join(folder_path, "key.priv"))
     ca.save_public_key(private_key.public_key(), os.path.join(folder_path, "key.pub"))
 
+    mb.showinfo("Success!", "File encrypted successfully!")
+
 
 def createFilePaths(input_file, folder_path):
     input_file_name = input_file.split('/')[-1].split('.')[0] # wyjmuje nazwę pliku
@@ -124,6 +117,8 @@ def decrypt(input_file, key_file):
     with open(output_file, "wb") as f:
         f.write(plaintext)
 
+    mb.showinfo("Success!", "File decrypted successfully!")
+
 
 def create_encryption_UI(frame, input_file, key_value):
     # Napis input
@@ -131,13 +126,14 @@ def create_encryption_UI(frame, input_file, key_value):
     label_selected.grid(row=0, column=0, padx=5, pady=10)
 
     # Pole do wyświetlania wybranego pliku
-    entry_input = tk.Entry(frame, textvariable=input_file)
+    file_name = tk.StringVar(value="Null")
+    entry_input = tk.Entry(frame, textvariable=file_name)
     entry_input.config(state='readonly')
     entry_input.grid(row=0, column=1, padx=5, pady=10)
 
     # Przycisk do wyboru pliku
     button_select_input = tk.Button(frame, text="Select file",
-                                    command=lambda: get_file(entry_input, input_file, [("All files", ".*")]))
+                                    command=lambda: get_file(entry_input, input_file, file_name, [("All files", ".*")]))
     button_select_input.grid(row=0, column=2, padx=5, pady=10)
 
     # Napis do klucza
@@ -171,7 +167,7 @@ def create_encryption_UI(frame, input_file, key_value):
 
     # Przycisk clear
     button_clear = tk.Button(frame, text="Clear", bg="#FFF300",
-                             command=lambda: reset_form([input_file, key_value]))
+                             command=lambda: reset_form([input_file, key_value, file_name]))
     button_clear.grid(row=5, column=2, pady=10, padx=10)
 
 
@@ -181,13 +177,14 @@ def create_decryption_UI(frame, input_file, key_file):
     label_selected.grid(row=0, column=0, padx=5, pady=10)
 
     # Pole do wyświetlania wybranego pliku
-    entry_input = tk.Entry(frame, textvariable=input_file)
+    file_name = tk.StringVar(value="Null")
+    entry_input = tk.Entry(frame, textvariable=file_name)
     entry_input.config(state='readonly')
     entry_input.grid(row=0, column=1, padx=5, pady=10)
 
     # Przycisk do wyboru pliku
     button1 = tk.Button(frame, text="Select file",
-                        command=lambda: get_file(entry_input, input_file, [("Text files", "*.txt")]))
+                        command=lambda: get_file(entry_input, input_file, file_name, [("Text files", "*.txt")]))
     button1.grid(row=0, column=2, pady=10, padx=10)
 
     # Napis klucz
@@ -195,13 +192,14 @@ def create_decryption_UI(frame, input_file, key_file):
     label_key.grid(row=1, column=0, padx=10, pady=5)
 
     # Wczytanie klucza
-    entry_key = tk.Entry(frame, textvariable=key_file)
+    key_file_name = tk.StringVar(value="Null")
+    entry_key = tk.Entry(frame, textvariable=key_file_name)
     entry_key.config(state='readonly')
     entry_key.grid(row=1, column=1, padx=5, pady=10)
 
     # Przycisk do klucza
     button2 = tk.Button(frame, text="Select file",
-                        command=lambda: get_file(entry_key, key_file, [("Key files", ".priv")]))
+                        command=lambda: get_file(entry_key, key_file, key_file_name, [("Key files", ".priv")]))
     button2.grid(row=1, column=2, padx=5, pady=10)
 
     # Przycisk decrypt
@@ -210,7 +208,7 @@ def create_decryption_UI(frame, input_file, key_file):
     button_decrypt.grid(row=3, column=0, padx=5, pady=10)
 
     # Przycisk clear
-    button_clear = tk.Button(frame, text="Clear", bg="#FFF300", command=lambda: reset_form([input_file, key_file]))
+    button_clear = tk.Button(frame, text="Clear", bg="#FFF300", command=lambda: reset_form([input_file, key_file, key_file_name, file_name]))
     button_clear.grid(row=3, column=2, padx=5, pady=10)
 
 
