@@ -33,7 +33,7 @@ def decrypt_asym(ciphertext, key_priv):
             label=None
         )
     )
-    return decrypted.decode('utf-8')  # Decode bytes back to string
+    return decrypted.decode('utf-8')
 
 def save_private_key(private_key, filename):
     pem = private_key.private_bytes(
@@ -79,6 +79,6 @@ if __name__ == "__main__":
     decrypted_text = decrypt_asym(encrypted_text, private_key)
 
     print("Original message:", message)
-    print("Encrypted message:", encrypted_text)  # This will be a byte sequence
+    print("Encrypted message:", encrypted_text)
     print("Decrypted message:", decrypted_text)
 

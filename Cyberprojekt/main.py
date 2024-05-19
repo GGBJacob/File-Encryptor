@@ -102,6 +102,10 @@ def create_decryption_output_file(input_file):
     # wyjmuje ścieżkę z pliku, dodaje przedrostek decrypted i resztę nazwy z rozszerzeniem txt
 
 
+# jak działa szyfrowanie symetryczne, asymetryczne, oraz mieszane
+# https://cdn.discordapp.com/attachments/1234544566556692570/1241049559577137284/voice-message.ogg?ex=664ac338&is=664971b8&hm=a2a340bf1e0d99d322e67bc371bb5d7150ef0227d77d2e1d0e7e6684acd46beb&
+# https://cdn.discordapp.com/attachments/1234544566556692570/1241049702758350981/voice-message.ogg?ex=664ac35a&is=664971da&hm=f25e037100dbb5cd06f1901b36b1258af82277d1b73562c58a25d1146115e955&
+
 def decrypt(input_file, key_file):
     with open(input_file.get(), "rb") as f:
         encrypted_asym_key_sym = f.read(256)
