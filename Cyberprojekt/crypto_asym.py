@@ -37,7 +37,7 @@ def decrypt_asym(ciphertext, key_priv):
                 label=None
             )
         )
-        return decrypted.decode('utf-8')  # Decode bytes back to string
+        return decrypted.decode('utf-8')
     except Exception as e:
         mb.showerror("Error", f"Decryption failed: {e}")
 
@@ -90,5 +90,5 @@ if __name__ == "__main__":
     decrypted_text = decrypt_asym(encrypted_text, private_key)
 
     print("Original message:", message)
-    print("Encrypted message:", encrypted_text)  # This will be a byte sequence
+    print("Encrypted message:", encrypted_text)
     print("Decrypted message:", decrypted_text)
