@@ -12,8 +12,6 @@ KEY_LENGTH = 16
 def generate_key(key_value, key_length):
     new_key = random_characters(key_length)
     key_value.set(new_key)
-    pass
-    # key_value.set(*wartość klucza jako string*)
 
 def random_characters(key_length): #zwraca string
     new_text = ""
@@ -52,9 +50,8 @@ def encrypt_sym(data, key_value, mode):
     return ciphertext, iv_new
 
 def decrypt_sym(ciphertext, key, iv, mode):
-
-    assert len(key) == KEY_LENGTH, "Key must be 16 bytes for AES-128"
-    assert len(iv) == KEY_LENGTH, "IV must be 16 bytes for AES"
+    assert len(key) == KEY_LENGTH, mb.showerror("Error", "Key must be 16 bytes for AES-128")
+    assert len(iv) == KEY_LENGTH, mb.showerror("Error", "IV must be 16 bytes for AES")
 
     if mode == "block":
         cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
