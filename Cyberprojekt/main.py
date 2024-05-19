@@ -6,6 +6,7 @@ import crypto_sym as cs
 import crypto_asym as ca
 from crypto_sym import KEY_LENGTH
 
+
 def get_file(entry, input_file, file_name, filetypes):
     filepath = fd.askopenfilename(title='Select file', filetypes=filetypes)
     entry.config(state='normal')
@@ -65,15 +66,19 @@ def encrypt(input_file, key_value, encrypt_mode):
 
     folder_path = create_encryption_output_path(input_file)
 
-    output_file, key_file = createFilePaths(input_file, folder_path)
+    output_file, _ = createFilePaths(input_file, folder_path)
     with open(input_file, "rb") as f:
         data = f.read()
+
+    file_name, extension = os.path.splitext(input_file)
+    file_name = file_name.split('/')[-1]
 
     newline = bytes("\n", 'utf-8')
 
     # szyfrowanie symetrtyczne
     encrypted_file_sym, iv = cs.encrypt_sym(data, key_value, encrypt_mode)
-    key_sym = bytes(encrypt_mode, 'utf-8') + newline + iv + newline + bytes(key_value.get(), 'utf-8')
+    key_sym = bytes(encrypt_mode, 'utf-8') + newline + bytes(extension, 'utf-8') + newline + iv + newline + bytes(
+        key_value.get(), 'utf-8')
 
     # szyfrowanie asymetryczne
     private_key = ca.generate_key_pair()
@@ -83,22 +88,26 @@ def encrypt(input_file, key_value, encrypt_mode):
     with open(output_file, "wb") as f:
         f.write(combined_file_sym_and_asym_key_sym)
 
-    ca.save_private_key(private_key, os.path.join(folder_path, "key.priv"))
-    ca.save_public_key(private_key.public_key(), os.path.join(folder_path, "key.pub"))
+    ca.save_private_key(private_key, os.path.join(folder_path, file_name + "_key.priv"))
+    ca.save_public_key(private_key.public_key(), os.path.join(folder_path, file_name + "_key.pub"))
 
     mb.showinfo("Success!", "File encrypted successfully!")
 
 
 def createFilePaths(input_file, folder_path):
-    input_file_name = input_file.split('/')[-1].split('.')[0] # wyjmuje nazwę pliku
+    input_file_name = input_file.split('/')[-1].split('.')[0]  # wyjmuje nazwę pliku
     file_paths = ['encrypted_' + input_file_name + '.txt', 'keypair.key']
     for i in range(len(file_paths)):
-        file_paths[i] = os.path.join(folder_path, file_paths[i]) # tworzenie ścieżek do wygenerowania
+        file_paths[i] = os.path.join(folder_path, file_paths[i])  # tworzenie ścieżek do wygenerowania
     return file_paths
 
 
-def create_decryption_output_file(input_file):
-    return os.path.dirname(input_file.get()) + '/decrypted_' + input_file.get().split('/')[-1].split('_')[1]
+def create_decryption_output_file(input_file, extension):
+    path = os.path.dirname(input_file.get())
+    input_file_name = input_file.get().split('/')[-1].split('.')[0]
+    output_file_name = 'decrypted_' + input_file_name.replace("encrypted_", "", 1) + extension
+    output_file_path = os.path.join(path, output_file_name)
+    return output_file_path
     # wyjmuje ścieżkę z pliku, dodaje przedrostek decrypted i resztę nazwy z rozszerzeniem txt
 
 
@@ -113,10 +122,10 @@ def decrypt(input_file, key_file):
 
     private_key = ca.load_private_key(key_file.get())
 
-    encrypt_mode, iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
+    encrypt_mode, extension, iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
     plaintext = cs.decrypt_sym(encrypted_file_sym, key_sym.encode(), iv.encode(), mode=encrypt_mode)
 
-    output_file = create_decryption_output_file(input_file)
+    output_file = create_decryption_output_file(input_file, extension)
 
     with open(output_file, "wb") as f:
         f.write(plaintext)
@@ -165,20 +174,20 @@ def create_encryption_UI(frame, input_file, key_value):
     rbutton2.grid(row=4, column=2, padx=5, pady=10)
 
     # Przycisk szyfrowania
-    confirm = tk.Button(frame, text="Encrypt!", bg="#23FF00",
+    confirm = tk.Button(frame, text="Encrypt!", bg="#9EDBC9",
                         command=lambda: encrypt(input_file.get(), key_value, encrypt_mode.get()))
     confirm.grid(row=5, column=0, padx=10, pady=10)
 
     # Przycisk clear
-    button_clear = tk.Button(frame, text="Clear", bg="#FFF300",
+    button_clear = tk.Button(frame, text="Clear", bg="#FC68A0",
                              command=lambda: reset_form([input_file, key_value, file_name]))
     button_clear.grid(row=5, column=2, pady=10, padx=10)
 
 
 def create_decryption_UI(frame, input_file, key_file):
     # Napis wybrany plik
-    label_selected = tk.Label(frame, text="Selected file:")
-    label_selected.grid(row=0, column=0, padx=5, pady=10)
+    label_selected = tk.Label(frame, text="Input file:")
+    label_selected.grid(row=0, column=0, padx=10, pady=10)
 
     # Pole do wyświetlania wybranego pliku
     file_name = tk.StringVar(value="Null")
@@ -207,12 +216,13 @@ def create_decryption_UI(frame, input_file, key_file):
     button2.grid(row=1, column=2, padx=5, pady=10)
 
     # Przycisk decrypt
-    button_decrypt = tk.Button(frame, text="Decrypt!", bg="#FF7C00",
+    button_decrypt = tk.Button(frame, text="Decrypt!", bg="#E2A879",
                                command=lambda: decrypt(input_file, key_file))
     button_decrypt.grid(row=3, column=0, padx=5, pady=10)
 
     # Przycisk clear
-    button_clear = tk.Button(frame, text="Clear", bg="#FFF300", command=lambda: reset_form([input_file, key_file, key_file_name, file_name]))
+    button_clear = tk.Button(frame, text="Clear", bg="#FC68A0",
+                             command=lambda: reset_form([input_file, key_file, key_file_name, file_name]))
     button_clear.grid(row=3, column=2, padx=5, pady=10)
 
 
@@ -228,7 +238,6 @@ def main():
     decryption_input_file = tk.StringVar(value="Null")
     key_value = tk.StringVar(value="Null")
     key_file = tk.StringVar(value="Null")
-    output_file = tk.StringVar(value="Null")
 
     # Menu
     menubar = tk.Menu(root)

@@ -32,8 +32,8 @@ def encrypt_sym(data, key_value, mode):
     iv_new = iv.encode('utf-8')
     key_value = key_value.get().encode('utf-8')
 
-    assert len(key_value) == KEY_LENGTH, "Key must be 16 bytes for AES-128"
-    assert len(iv_new) == KEY_LENGTH, "IV must be 16 bytes for AES"
+    assert len(key_value) == KEY_LENGTH, mb.showerror("Error","Key must be 16 bytes for AES-128")
+    assert len(iv_new) == KEY_LENGTH, mb.showerror("Error", "IV must be 16 bytes for AES")
 
     if mode == "block":
         padder = padding.PKCS7(algorithms.AES.block_size).padder() #PKCS7 to popularny padding scheme
