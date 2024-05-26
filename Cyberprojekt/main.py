@@ -65,10 +65,6 @@ def encrypt(input_file, key_value, encrypt_mode):
     if not are_variables_set([input_file, key_value, encrypt_mode]):
         return
 
-    with open(input_file, "r") as file:
-        if not file.read().strip(): #odczytuje zawartość pliku do białego znaku (jeżeli brak, plik pusty)
-            mb.showerror("Error", "Selected file is empty!")
-            return
     folder_path = create_encryption_output_path(input_file)
 
     output_file = create_file_path(input_file, folder_path)
