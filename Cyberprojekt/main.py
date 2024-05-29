@@ -61,10 +61,12 @@ def create_encryption_output_path(input_file):
     return path
 
 
-def encrypt(input_file, key_value, encrypt_mode):
-    if not are_variables_set([input_file, key_value, encrypt_mode]):
+def encrypt(input_file, encrypt_mode):
+    if not are_variables_set([input_file, encrypt_mode]):
         return
 
+    key_value = tk.StringVar(value="")
+    cs.generate_key(key_value, KEY_LENGTH)
     folder_path = create_encryption_output_path(input_file)
 
     output_file = create_file_path(input_file, folder_path)
@@ -136,7 +138,59 @@ def decrypt(input_file, key_file):
     mb.showinfo("Success!", "File decrypted successfully!")
 
 
-def create_encryption_UI(frame, input_file, key_value):
+def add_user(is_menu_alive, menu, selected_user, users_list):
+    if is_menu_alive.get():
+        return
+    is_menu_alive.set(True)
+
+    # Konfiguracja okna
+    add_user_root = tk.Toplevel()
+    #add_user_root.attributes("-toolwindow", 1)
+    add_user_root.title("Add user")
+    add_user_root.iconbitmap("icon.ico")
+    add_user_root.resizable(False, False)
+    print(add_user_root.winfo_width(), add_user_root.winfo_height())
+    add_user_root.protocol("WM_DELETE_WINDOW", lambda: (add_user_root.destroy(), is_menu_alive.set(False)))
+
+    # Tekst "enter username"
+    username_label = tk.Label(add_user_root, text="Enter username:")
+    username_label.grid(row=0,padx=5, pady=10)
+
+    # Pole na nazwę użytkownika
+    user_name = tk.StringVar(value="")
+    username_entry = tk.Entry(add_user_root, textvariable=user_name, width=30)
+    username_entry.grid(row=1, padx=5, pady=10)
+
+    # Sprawdzenie czy użytkownik istnieje
+    def finalize():
+        # Sprawdza, czy użytkownik nie istnieje
+        if user_name.get() in users_list:
+            mb.showerror("Error", "Username already taken!")
+            return
+
+        # Sprawdza, czy użytkownik został podany
+        if user_name.get() != "":
+            mb.showerror("Error", "Username empty!")
+            return
+
+        # Dodawanie
+        users.append(user_name.get())
+
+        # Odświeżenie listy
+        menu['menu'].delete(0, 'end')
+        for user in users_list:
+            menu['menu'].add_command(label=user, command=lambda value=user: selected_user.set(value))
+
+        # Zamknięcie okna
+        is_menu_alive.set(False)
+        add_user_root.destroy()
+
+    #Przycisk zatwierdzenia
+    user_add_button = tk.Button(add_user_root, text="Add user", command=finalize)
+    user_add_button.grid(row=2, padx=5, pady=10)
+
+
+def create_encryption_UI(frame, input_file, users):
     # Napis input
     label_selected = tk.Label(frame, text="Input file:")
     label_selected.grid(row=0, column=0, padx=5, pady=10)
@@ -152,17 +206,31 @@ def create_encryption_UI(frame, input_file, key_value):
                                     command=lambda: get_file(entry_input, input_file, file_name, [("All files", ".*")]))
     button_select_input.grid(row=0, column=2, padx=5, pady=10)
 
-    # Napis do klucza
-    label_key_value = tk.Label(frame, text="Key value:")
-    label_key_value.grid(row=1, column=0, padx=5, pady=10)
+    # Napis do użytkownika
+    label_user = tk.Label(frame, text="To:")
+    label_user.grid(row=1, column=0, padx=5, pady=10)
 
-    # Pole do wyświetlania klucza
-    entry_key_value = tk.Entry(frame, textvariable=key_value)
-    entry_key_value.grid(row=1, column=1, padx=5, pady=10)
+    # Wybór użytkownika
+    user_selected = tk.StringVar(value="Select an option")
+    dropdown_user = tk.OptionMenu(frame, user_selected, *users)
+    dropdown_user.grid(row=1, column=1, padx=5, pady=10)
 
-    # Generacja nowego klucza
-    reroll_button = tk.Button(frame, text="Reroll key", command=lambda: cs.generate_key(key_value, KEY_LENGTH))
-    reroll_button.grid(row=1, column=2, padx=10, pady=10)
+    # Dodawanie użytkownika
+    add_menu_open = tk.BooleanVar(value=False)
+    add_user_button = tk.Button(frame, text="Add user", command=lambda: add_user(add_menu_open, dropdown_user, user_selected, users))
+    add_user_button.grid(row=1, column=2, padx=5, pady=10)
+
+    # # Napis do klucza
+    # label_key_value = tk.Label(frame, text="Key value:")
+    # label_key_value.grid(row=1, column=0, padx=5, pady=10)
+    #
+    # # Pole do wyświetlania klucza
+    # entry_key_value = tk.Entry(frame, textvariable=key_value)
+    # entry_key_value.grid(row=1, column=1, padx=5, pady=10)
+    #
+    # # Generacja nowego klucza
+    # reroll_button = tk.Button(frame, text="Reroll key", command=lambda: cs.generate_key(key_value, KEY_LENGTH))
+    # reroll_button.grid(row=1, column=2, padx=10, pady=10)
 
     # Label do wyboru
     label_encrypt_mode = tk.Label(frame, text="Encrypt mode:")
@@ -178,7 +246,7 @@ def create_encryption_UI(frame, input_file, key_value):
 
     # Przycisk szyfrowania
     confirm = tk.Button(frame, text="Encrypt!", bg="#9EDBC9",
-                        command=lambda: encrypt(input_file.get(), key_value, encrypt_mode.get()))
+                        command=lambda: encrypt(input_file.get(), encrypt_mode.get()))
     confirm.grid(row=5, column=0, padx=10, pady=10)
 
     # Przycisk clear
@@ -299,6 +367,8 @@ if __name__ == "__main__":
 
     encryption_input_file = tk.StringVar(value="Null")
     decryption_input_file = tk.StringVar(value="Null")
+    user_selected = tk.StringVar(value="Null")
+    users = ["Mike", "LeBron James", "Dziekan"]
     key_value = tk.StringVar(value="Null")
     key_file = tk.StringVar(value="Null")
     about_section_open = tk.IntVar(value=0)
@@ -322,7 +392,7 @@ if __name__ == "__main__":
     decrypt_frame = tk.Frame()
 
     create_decryption_UI(decrypt_frame, decryption_input_file, key_file)
-    create_encryption_UI(encrypt_frame, encryption_input_file, key_value)
+    create_encryption_UI(encrypt_frame, encryption_input_file, users)
 
     if appMode.get() == 1:
         change_frame(decrypt_frame, encrypt_frame, appMode.get(), root)
