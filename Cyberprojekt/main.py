@@ -145,7 +145,6 @@ def add_user(is_menu_alive, menu, selected_user, users_list):
 
     # Konfiguracja okna
     add_user_root = tk.Toplevel()
-    #add_user_root.attributes("-toolwindow", 1)
     add_user_root.title("Add user")
     add_user_root.iconbitmap("icon.ico")
     add_user_root.resizable(False, False)
@@ -161,6 +160,20 @@ def add_user(is_menu_alive, menu, selected_user, users_list):
     username_entry = tk.Entry(add_user_root, textvariable=user_name, width=30)
     username_entry.grid(row=1, padx=5, pady=10)
 
+    # Utworzenie katalogu z kluczami użytkownika
+    def create_user_files():
+        path = os.getcwd()
+        folder_path = os.path.join(path, "users")
+        if not os.path.exists(folder_path):
+            os.mkdir(folder_path)
+        user_folder_path = os.path.join(folder_path, user_name.get())
+        os.mkdir(user_folder_path)
+        key_pair = ca.generate_key_pair()
+        public_key_filepath = os.path.join(user_folder_path, "key.pub")
+        private_key_filepath = os.path.join(user_folder_path, "key.priv")
+        ca.save_public_key(key_pair.public_key(), public_key_filepath)
+        ca.save_private_key(key_pair, private_key_filepath)
+
     # Sprawdzenie czy użytkownik istnieje
     def finalize():
         # Sprawdza, czy użytkownik nie istnieje
@@ -169,16 +182,17 @@ def add_user(is_menu_alive, menu, selected_user, users_list):
             return
 
         # Sprawdza, czy użytkownik został podany
-        if user_name.get() != "":
+        if user_name.get() == "":
             mb.showerror("Error", "Username empty!")
             return
 
         # Dodawanie
         users.append(user_name.get())
-
+        create_user_files()
+        menu.config(state=tk.NORMAL)
         # Odświeżenie listy
         menu['menu'].delete(0, 'end')
-        for user in users_list:
+        for user in load_users():
             menu['menu'].add_command(label=user, command=lambda value=user: selected_user.set(value))
 
         # Zamknięcie okna
@@ -211,9 +225,12 @@ def create_encryption_UI(frame, input_file, users):
     label_user.grid(row=1, column=0, padx=5, pady=10)
 
     # Wybór użytkownika
-    user_selected = tk.StringVar(value="Select an option")
+    user_selected = tk.StringVar(value="Select user")
     dropdown_user = tk.OptionMenu(frame, user_selected, *users)
+    dropdown_user.config(width=14)
     dropdown_user.grid(row=1, column=1, padx=5, pady=10)
+    if len(users) == 1 and users[0] == "<Null>":
+        dropdown_user.config(state=tk.DISABLED)
 
     # Dodawanie użytkownika
     add_menu_open = tk.BooleanVar(value=False)
@@ -356,6 +373,12 @@ def show_about_section(section_open):
     text_widget.config(state='disabled', padx=10, pady=5, cursor='')
     text_widget.pack(pady=10, padx=10)
 
+def load_users():
+    users_path = os.path.join(os.getcwd(), "users")
+    if not os.path.exists(users_path) or len(os.listdir(users_path)) == 0:
+        return ["<Null>"]
+    return os.listdir(users_path)
+
 
 if __name__ == "__main__":
     # Główne okno
@@ -368,7 +391,7 @@ if __name__ == "__main__":
     encryption_input_file = tk.StringVar(value="Null")
     decryption_input_file = tk.StringVar(value="Null")
     user_selected = tk.StringVar(value="Null")
-    users = ["Mike", "LeBron James", "Dziekan"]
+    users = load_users()
     key_value = tk.StringVar(value="Null")
     key_file = tk.StringVar(value="Null")
     about_section_open = tk.IntVar(value=0)
