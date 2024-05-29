@@ -61,7 +61,7 @@ def create_encryption_output_path(input_file):
     return path
 
 
-def encrypt(input_file, encrypt_mode):
+def encrypt(input_file, encrypt_mode, user):
     if not are_variables_set([input_file, encrypt_mode]):
         return
 
@@ -83,6 +83,15 @@ def encrypt(input_file, encrypt_mode):
     key_sym = bytes(encrypt_mode, 'utf-8') + newline + bytes(extension, 'utf-8') + newline + iv + newline + bytes(
         key_value.get(), 'utf-8')
 
+    # TODO: odczytanie klucza publicznego dla wybranego użytkownika (rozpoczęte poniżej)
+
+    private_key_file, public_key_file = get_user_keys(user)
+    if private_key_file is None or public_key_file is None:
+        mb.showwarning(title="Error", message="User does not exist!")
+        return
+    private_key_from_file = ca.load_private_key(private_key_file) # TODO: użyć tego poprawnie
+    print("private_key_from_file", private_key_from_file)
+    
     # szyfrowanie asymetryczne
     private_key = ca.generate_key_pair()
     encrypted_asym_key_sym = ca.encrypt_asym(key_sym.decode(), private_key.public_key())
@@ -124,7 +133,7 @@ def decrypt(input_file, key_file):
     with open(input_file.get(), "rb") as f:
         encrypted_asym_key_sym = f.read(256)
         encrypted_file_sym = f.read()
-
+    # TODO: odczytanie klucza prywatnego
     private_key = ca.load_private_key(key_file.get())
 
     encrypt_mode, extension, iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
@@ -153,7 +162,7 @@ def add_user(is_menu_alive, menu, selected_user, users_list):
 
     # Tekst "enter username"
     username_label = tk.Label(add_user_root, text="Enter username:")
-    username_label.grid(row=0,padx=5, pady=10)
+    username_label.grid(row=0, padx=5, pady=10)
 
     # Pole na nazwę użytkownika
     user_name = tk.StringVar(value="")
@@ -199,9 +208,19 @@ def add_user(is_menu_alive, menu, selected_user, users_list):
         is_menu_alive.set(False)
         add_user_root.destroy()
 
-    #Przycisk zatwierdzenia
+    # Przycisk zatwierdzenia
     user_add_button = tk.Button(add_user_root, text="Add user", command=finalize)
     user_add_button.grid(row=2, padx=5, pady=10)
+
+
+def get_user_keys(user):
+    users_dir = os.path.join(os.getcwd(), "users")
+    user_folder = os.path.join(users_dir, user)
+    if not os.path.isdir(user_folder):
+        return None, None
+    private_key_file = os.path.join(user_folder, "key.priv")
+    public_key_file = os.path.join(user_folder, "key.pub")
+    return private_key_file, public_key_file
 
 
 def create_encryption_UI(frame, input_file, users):
@@ -234,7 +253,8 @@ def create_encryption_UI(frame, input_file, users):
 
     # Dodawanie użytkownika
     add_menu_open = tk.BooleanVar(value=False)
-    add_user_button = tk.Button(frame, text="Add user", command=lambda: add_user(add_menu_open, dropdown_user, user_selected, users))
+    add_user_button = tk.Button(frame, text="Add user",
+                                command=lambda: add_user(add_menu_open, dropdown_user, user_selected, users))
     add_user_button.grid(row=1, column=2, padx=5, pady=10)
 
     # # Napis do klucza
@@ -263,7 +283,7 @@ def create_encryption_UI(frame, input_file, users):
 
     # Przycisk szyfrowania
     confirm = tk.Button(frame, text="Encrypt!", bg="#9EDBC9",
-                        command=lambda: encrypt(input_file.get(), encrypt_mode.get()))
+                        command=lambda: encrypt(input_file.get(), encrypt_mode.get(), user_selected.get()))
     confirm.grid(row=5, column=0, padx=10, pady=10)
 
     # Przycisk clear
@@ -372,6 +392,7 @@ def show_about_section(section_open):
     # Wyłączenie edycji tekstu
     text_widget.config(state='disabled', padx=10, pady=5, cursor='')
     text_widget.pack(pady=10, padx=10)
+
 
 def load_users():
     users_path = os.path.join(os.getcwd(), "users")
