@@ -65,6 +65,11 @@ def encrypt(input_file, encrypt_mode, user):
     if not are_variables_set([input_file, encrypt_mode]):
         return
 
+    private_key_file, public_key_file = get_user_keys(user)
+    if private_key_file is None or public_key_file is None:
+        mb.showwarning(title="Error", message="User does not exist!")
+        return
+
     key_value = tk.StringVar(value="")
     cs.generate_key(key_value, KEY_LENGTH)
     folder_path = create_encryption_output_path(input_file)
@@ -74,7 +79,6 @@ def encrypt(input_file, encrypt_mode, user):
         data = f.read()
 
     file_name, extension = os.path.splitext(input_file)
-    file_name = file_name.split('/')[-1]
 
     newline = bytes("\n", 'utf-8')
 
@@ -82,26 +86,14 @@ def encrypt(input_file, encrypt_mode, user):
     encrypted_file_sym, iv = cs.encrypt_sym(data, key_value, encrypt_mode)
     key_sym = bytes(encrypt_mode, 'utf-8') + newline + bytes(extension, 'utf-8') + newline + iv + newline + bytes(
         key_value.get(), 'utf-8')
-
-    # TODO: odczytanie klucza publicznego dla wybranego użytkownika (rozpoczęte poniżej)
-
-    private_key_file, public_key_file = get_user_keys(user)
-    if private_key_file is None or public_key_file is None:
-        mb.showwarning(title="Error", message="User does not exist!")
-        return
-    private_key_from_file = ca.load_private_key(private_key_file) # TODO: użyć tego poprawnie
-    print("private_key_from_file", private_key_from_file)
     
     # szyfrowanie asymetryczne
-    private_key = ca.generate_key_pair()
-    encrypted_asym_key_sym = ca.encrypt_asym(key_sym.decode(), private_key.public_key())
+    public_key = ca.load_public_key(public_key_file)
+    encrypted_asym_key_sym = ca.encrypt_asym(key_sym.decode(), public_key)
     combined_file_sym_and_asym_key_sym = encrypted_asym_key_sym + encrypted_file_sym
 
     with open(output_file, "wb") as f:
         f.write(combined_file_sym_and_asym_key_sym)
-
-    ca.save_private_key(private_key, os.path.join(folder_path, file_name + "_key.priv"))
-    ca.save_public_key(private_key.public_key(), os.path.join(folder_path, file_name + "_key.pub"))
 
     mb.showinfo("Success!", "File encrypted successfully!")
 
@@ -135,17 +127,15 @@ def decrypt(input_file, user, password):
         mb.showerror("Error", "Not all variables set!")
         return
 
-    if not verify_user(user, password):
-        mb.showerror("Error", "Invalid username or password!")
-        return
-
     with open(input_file.get(), "rb") as f:
         encrypted_asym_key_sym = f.read(256)
         encrypted_file_sym = f.read()
 
     # TODO: odczytanie klucza prywatnego
     private_key_file, public_key_file = get_user_keys(user.get())
-    private_key = ca.load_private_key(private_key_file)
+    private_key = ca.load_private_key(private_key_file, password=password.get())
+    if private_key is None:
+        return
 
     encrypt_mode, extension, iv, key_sym = ca.decrypt_asym(encrypted_asym_key_sym, private_key).split('\n')
     plaintext = cs.decrypt_sym(encrypted_file_sym, key_sym.encode(), iv.encode(), mode=encrypt_mode)
@@ -156,23 +146,6 @@ def decrypt(input_file, user, password):
         f.write(plaintext)
 
     mb.showinfo("Success!", "File decrypted successfully!")
-
-
-def verify_user(user, password_entered):
-
-    users_folder = os.path.join(os.getcwd(), "users")
-    password_file = os.path.join(users_folder, "passwords.txt")
-    with open(password_file, 'r') as file:
-        for line in file:
-            username, password = line.strip().split(',')
-            if username == user.get():
-                if password == password_entered.get():
-                    return True
-                else:
-                    return False
-    return False
-
-
 
 
 def add_user(is_menu_alive, menu, selected_user, users_list):
@@ -218,17 +191,12 @@ def add_user(is_menu_alive, menu, selected_user, users_list):
         user_folder_path = os.path.join(folder_path, username.get())
         os.mkdir(user_folder_path)
 
-        # Zapisanie hasła
-        passwords_file = os.path.join(folder_path, "passwords.txt")
-        with open(passwords_file, 'a') as file:
-            file.write(f"{username.get()},{password.get()}\n")
-
         # Utworzenie i zapisanie pary kluczy
         key_pair = ca.generate_key_pair()
         public_key_filepath = os.path.join(user_folder_path, "key.pub")
         private_key_filepath = os.path.join(user_folder_path, "key.priv")
         ca.save_public_key(key_pair.public_key(), public_key_filepath)
-        ca.save_private_key(key_pair, private_key_filepath)
+        ca.save_private_key(key_pair, private_key_filepath, password.get())
 
     # Sprawdzenie czy użytkownik istnieje
     def finalize():

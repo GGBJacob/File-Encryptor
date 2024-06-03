@@ -42,11 +42,13 @@ def decrypt_asym(ciphertext, key_priv):
         mb.showerror("Error", f"Decryption failed: {e}")
 
 
-def save_private_key(private_key, filename):
+def save_private_key(private_key, filename, password):
+    if isinstance(password, str):
+        password = password.encode('utf-8')
     pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
+        encryption_algorithm=serialization.BestAvailableEncryption(password)
     )
     with open(filename, 'wb') as pem_out:
         pem_out.write(pem)
@@ -62,24 +64,34 @@ def save_public_key(public_key, filename):
 
 
 def load_private_key(filename, password=None):
-    with open(filename, 'rb') as pem_in:
-        pem_data = pem_in.read()
-    private_key = serialization.load_pem_private_key(
-        pem_data,
-        password=password,
-        backend=default_backend()
-    )
-    return private_key
+    try:
+        if isinstance(password, str):
+            password = password.encode('utf-8')
+        with open(filename, 'rb') as pem_in:
+            pem_data = pem_in.read()
+        private_key = serialization.load_pem_private_key(
+            pem_data,
+            password=password,
+            backend=default_backend()
+        )
+        return private_key
+    except Exception as e:
+        mb.showerror("Error", f"{e}")
+        return None
 
 
 def load_public_key(filename):
-    with open(filename, 'rb') as pem_in:
-        pem_data = pem_in.read()
-    public_key = serialization.load_pem_public_key(
-        pem_data,
-        backend=default_backend()
-    )
-    return public_key
+    try:
+        with open(filename, 'rb') as pem_in:
+            pem_data = pem_in.read()
+        public_key = serialization.load_pem_public_key(
+            pem_data,
+            backend=default_backend()
+        )
+        return public_key
+    except Exception as e:
+        mb.showerror("Error", f"{e}")
+        return None
 
 
 if __name__ == "__main__":
